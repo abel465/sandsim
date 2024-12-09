@@ -23,6 +23,7 @@ pub struct Controller {
     cursor_down: bool,
     cursor_right_down: bool,
     current_particle_type: ParticleType,
+    brush_size: f32,
 }
 
 impl Controller {
@@ -41,6 +42,7 @@ impl Controller {
             cursor_down: false,
             cursor_right_down: false,
             current_particle_type: ParticleType::Sand,
+            brush_size: 20.0,
         }
     }
 
@@ -80,6 +82,7 @@ impl Controller {
             cursor_down: (self.cursor_down || self.cursor_right_down).into(),
             cursor: self.cursor.into(),
             current_particle_type: particle_type as u32,
+            brush_size_sq: self.brush_size * self.brush_size,
         }
     }
 
@@ -99,6 +102,8 @@ impl Controller {
             ParticleType::Water,
             "Water",
         );
+        ui.add(egui::Label::new("       Brush Size").selectable(false));
+        ui.add(egui::Slider::new(&mut self.brush_size, 1.0..=1000.0).logarithmic(true));
     }
 
     pub fn buffers(&self) -> BufferData {

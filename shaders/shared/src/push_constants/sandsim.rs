@@ -9,4 +9,5 @@ pub struct ShaderConstants {
     pub time: f32,
     pub cursor_down: Bool,
     pub current_particle_type: u32,
+    pub brush_size_sq: f32,
 }

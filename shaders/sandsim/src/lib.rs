@@ -48,7 +48,7 @@ pub fn main_fs(
 fn handle_cursor_down(constants: &ShaderConstants, pos: Vec2, grid: &mut GridRefMut<Particle>) {
     if constants.cursor_down.into() {
         let cursor: Vec2 = constants.cursor.into();
-        if cursor.distance_squared(pos) < 1000.0 {
+        if cursor.distance_squared(pos) < constants.brush_size_sq {
             let tone = rand(pos / constants.size.as_vec2() * (constants.time % 1.0));
             let particle_type = ParticleType::from_value(constants.current_particle_type);
             let particle = Particle::new_from_tone(particle_type, tone);
