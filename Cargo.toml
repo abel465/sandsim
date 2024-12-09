@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = [
+  "runner",
+  "shaders/sandsim",
+]
+default-members = ["runner"]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Abel <abel465@gmail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies.spirv-std]
+git = "https://github.com/Rust-GPU/rust-gpu"
+rev = "3dc5d8ad68681226114c3adad10a7afae1887735"
+
+[workspace.dependencies.spirv-builder]
+git = "https://github.com/Rust-GPU/rust-gpu"
+rev = "3dc5d8ad68681226114c3adad10a7afae1887735"
+default-features = false
+
+[profile.dev]
+package.spirv-tools-sys.opt-level = 1

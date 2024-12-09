@@ -1,0 +1,17 @@
+[package]
+name = "sandsim"
+version = "0.0.0"
+publish = false
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]
+spirv-std = { workspace = true }
+dfutils = { path = "../../crates/dfutils", default-features = false, features = [
+  "libm",
+] }
+shared = { path = "../shared" }
