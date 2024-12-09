@@ -8,5 +8,5 @@ pub struct ShaderConstants {
     pub cursor: Vec2,
     pub time: f32,
     pub cursor_down: Bool,
-    pub cursor_right_down: Bool,
+    pub current_particle_type: u32,
 }

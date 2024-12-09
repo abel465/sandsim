@@ -46,17 +46,12 @@ pub fn main_fs(
 }
 
 fn handle_cursor_down(constants: &ShaderConstants, pos: Vec2, grid: &mut GridRefMut<Particle>) {
-    let cursor_down: bool = constants.cursor_down.into();
-    let cursor_right_down: bool = constants.cursor_right_down.into();
-    if cursor_down || cursor_right_down {
+    if constants.cursor_down.into() {
         let cursor: Vec2 = constants.cursor.into();
         if cursor.distance_squared(pos) < 1000.0 {
             let tone = rand(pos / constants.size.as_vec2() * (constants.time % 1.0));
-            let particle = if cursor_down {
-                Particle::sand_from_tone(tone)
-            } else {
-                Particle::empty_from_tone(tone)
-            };
+            let particle_type = ParticleType::from_value(constants.current_particle_type);
+            let particle = Particle::new_from_tone(particle_type, tone);
             grid.set(pos.x as usize, pos.y as usize, particle);
         }
     }

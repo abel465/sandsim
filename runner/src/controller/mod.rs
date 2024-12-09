@@ -22,15 +22,15 @@ pub struct Controller {
     cursor: Vec2,
     cursor_down: bool,
     cursor_right_down: bool,
+    current_particle_type: ParticleType,
 }
 
 impl Controller {
     pub fn new(size: PhysicalSize<u32>) -> Self {
         let now = Instant::now();
-        let grid =
-            Grid::<Particle>::from_fn(size.width as usize, size.height as usize, |_, _| {
-                Particle::default()
-            });
+        let grid = Grid::<Particle>::from_fn(size.width as usize, size.height as usize, |_, _| {
+            Particle::default()
+        });
 
         Self {
             size,
@@ -40,6 +40,7 @@ impl Controller {
             cursor: Vec2::ZERO,
             cursor_down: false,
             cursor_right_down: false,
+            current_particle_type: ParticleType::Sand,
         }
     }
 
@@ -68,12 +69,17 @@ impl Controller {
     pub fn keyboard_input(&mut self, _key: KeyEvent) {}
 
     pub fn update(&mut self) {
+        let particle_type = if self.cursor_right_down {
+            ParticleType::Empty
+        } else {
+            self.current_particle_type
+        };
         self.shader_constants = ShaderConstants {
             size: self.size.into(),
             time: self.start.elapsed().as_secs_f32(),
-            cursor_down: self.cursor_down.into(),
-            cursor_right_down: self.cursor_right_down.into(),
+            cursor_down: (self.cursor_down || self.cursor_right_down).into(),
             cursor: self.cursor.into(),
+            current_particle_type: particle_type as u32,
         }
     }
 
@@ -84,9 +90,15 @@ impl Controller {
     pub fn ui(
         &mut self,
         _ctx: &Context,
-        _ui: &mut egui::Ui,
+        ui: &mut egui::Ui,
         _event_proxy: &EventLoopProxy<UserEvent>,
     ) {
+        ui.radio_value(&mut self.current_particle_type, ParticleType::Sand, "Sand");
+        ui.radio_value(
+            &mut self.current_particle_type,
+            ParticleType::Water,
+            "Water",
+        );
     }
 
     pub fn buffers(&self) -> BufferData {

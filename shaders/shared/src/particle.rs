@@ -5,7 +5,7 @@ fn rgb(x: u32) -> Vec3 {
     uvec3(x >> 16, (x >> 8) & 0xFF, x & 0xFF).as_vec3() / 255.0
 }
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Clone, Copy)]
 #[repr(u32)]
 pub enum ParticleType {
     #[default]
