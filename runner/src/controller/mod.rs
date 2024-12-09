@@ -20,6 +20,7 @@ pub struct Controller {
     shader_constants: ShaderConstants,
     grid: Grid<Particle>,
     cursor: Vec2,
+    prev_cursor: Vec2,
     cursor_down: bool,
     cursor_right_down: bool,
     current_particle_type: ParticleType,
@@ -39,6 +40,7 @@ impl Controller {
             shader_constants: ShaderConstants::zeroed(),
             grid,
             cursor: Vec2::ZERO,
+            prev_cursor: Vec2::ZERO,
             cursor_down: false,
             cursor_right_down: false,
             current_particle_type: ParticleType::Sand,
@@ -81,9 +83,11 @@ impl Controller {
             time: self.start.elapsed().as_secs_f32(),
             cursor_down: (self.cursor_down || self.cursor_right_down).into(),
             cursor: self.cursor.into(),
+            prev_cursor: self.prev_cursor.into(),
             current_particle_type: particle_type as u32,
             brush_size_sq: self.brush_size * self.brush_size,
-        }
+        };
+        self.prev_cursor = self.cursor;
     }
 
     pub fn push_constants(&self) -> &[u8] {

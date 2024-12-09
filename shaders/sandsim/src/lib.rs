@@ -5,6 +5,8 @@ use shared::gridref::*;
 use shared::particle::*;
 use shared::*;
 use spirv_std::glam::*;
+#[cfg_attr(not(target_arch = "spirv"), allow(unused_imports))]
+use spirv_std::num_traits::Float;
 use spirv_std::spirv;
 
 const EMPTY: u32 = 0;
@@ -45,10 +47,26 @@ pub fn main_fs(
     *output = val.color().powf(2.2).extend(1.0);
 }
 
+fn distance_sq_to_line_segment(p: Vec2, v: Vec2, w: Vec2) -> f32 {
+    // Return the distance squared between point p and line segment vw
+    let l2 = v.distance_squared(w); // i.e. |w-v|^2 -  avoid a sqrt
+    if l2 == 0.0 {
+        return p.distance_squared(v); // v == w case
+    }
+    // Consider the line extending the segment, parameterized as v + t (w - v).
+    // We find projection of point p onto the line.
+    // It falls where t = [(p-v) . (w-v)] / |w-v|^2
+    // We clamp t from [0,1] to handle points outside the segment vw.
+    let t = 0.0.max(1.0.min((p - v).dot(w - v) / l2));
+    let projection = v + t * (w - v); // Projection falls on the segment
+    return p.distance_squared(projection);
+}
+
 fn handle_cursor_down(constants: &ShaderConstants, pos: Vec2, grid: &mut GridRefMut<Particle>) {
     if constants.cursor_down.into() {
+        let prev_cursor: Vec2 = constants.prev_cursor.into();
         let cursor: Vec2 = constants.cursor.into();
-        if cursor.distance_squared(pos) < constants.brush_size_sq {
+        if distance_sq_to_line_segment(pos, prev_cursor, cursor) < constants.brush_size_sq {
             let tone = rand(pos / constants.size.as_vec2() * (constants.time % 1.0));
             let particle_type = ParticleType::from_value(constants.current_particle_type);
             let particle = Particle::new_from_tone(particle_type, tone);
