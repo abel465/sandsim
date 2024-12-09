@@ -1,7 +1,7 @@
 #![cfg_attr(target_arch = "spirv", no_std)]
 
-use dfutils::gridref::*;
 use push_constants::sandsim::ShaderConstants;
+use shared::gridref::*;
 use shared::particle::*;
 use shared::*;
 use spirv_std::glam::*;

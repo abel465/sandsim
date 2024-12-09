@@ -4,6 +4,9 @@ use spirv_std::glam::*;
 #[cfg_attr(not(target_arch = "spirv"), allow(unused_imports))]
 use spirv_std::num_traits::Float;
 
+#[cfg(not(target_arch = "spirv"))]
+pub mod grid;
+pub mod gridref;
 pub mod particle;
 pub mod push_constants;
 

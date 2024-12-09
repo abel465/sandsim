@@ -1,5 +1,5 @@
-#[cfg(not(feature = "std"))]
-use num_traits::Float;
+// #[cfg(not(feature = "std"))]
+// use num_traits::Float;
 
 #[derive(Clone, Copy)]
 pub struct GridRef<'a, T> {

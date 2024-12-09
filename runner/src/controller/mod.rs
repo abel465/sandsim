@@ -3,7 +3,6 @@ use crate::{
     window::UserEvent,
 };
 use bytemuck::Zeroable;
-use dfutils::grid::*;
 use egui::Context;
 use egui_winit::winit::{
     dpi::{PhysicalPosition, PhysicalSize},
@@ -11,6 +10,7 @@ use egui_winit::winit::{
     event_loop::EventLoopProxy,
 };
 use glam::*;
+use shared::grid::*;
 use shared::{particle::*, push_constants::sandsim::ShaderConstants};
 use std::time::Instant;
 
