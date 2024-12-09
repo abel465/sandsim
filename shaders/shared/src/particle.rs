@@ -60,6 +60,10 @@ impl Particle {
     pub fn sand_from_tone(tone: f32) -> Self {
         Self::new_from_tone(ParticleType::Sand, tone)
     }
+
+    pub fn empty_from_tone(tone: f32) -> Self {
+        Self::new_from_tone(ParticleType::Empty, tone)
+    }
 }
 
 #[cfg(not(target_arch = "spirv"))]

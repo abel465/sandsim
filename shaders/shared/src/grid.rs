@@ -18,6 +18,12 @@ where
         }
     }
 
+    pub fn from_fn(w: usize, h: usize, f: fn(usize, usize) -> T) -> Self {
+        let mut res = Self::new(w, h);
+        res.update(f);
+        res
+    }
+
     pub fn as_ref(&self) -> GridRef<'_, T> {
         GridRef::new(self.w, self.h, &self.buffer)
     }

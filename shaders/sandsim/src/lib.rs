@@ -24,25 +24,12 @@ pub fn main_fs(
         grid_buffer,
     );
 
-    if constants.cursor_down.into() {
-        let cursor: Vec2 = constants.cursor.into();
-        if cursor.distance_squared(frag_coord.xy()) < 1000.0 {
-            let tone = rand(
-                frag_coord.xy() / vec2(constants.size.width as f32, constants.size.height as f32)
-                    * (constants.time % 1.0),
-            );
-            grid.set(
-                frag_coord.x as usize,
-                frag_coord.y as usize,
-                Particle::sand_from_tone(tone),
-            );
-        }
-    }
+    let pos = frag_coord.xy();
+    handle_cursor_down(constants, pos, &mut grid);
 
-    let x = frag_coord.x as usize;
-    let y = frag_coord.y as usize;
+    let x = pos.x as usize;
+    let y = pos.y as usize;
     let val = grid.get(x, y);
-    let col = val.color();
     match val.behaviour {
         EMPTY => {}
         SAND => {
@@ -55,7 +42,24 @@ pub fn main_fs(
         _ => panic!(),
     }
 
-    *output = col.powf(2.2).extend(1.0);
+    *output = val.color().powf(2.2).extend(1.0);
+}
+
+fn handle_cursor_down(constants: &ShaderConstants, pos: Vec2, grid: &mut GridRefMut<Particle>) {
+    let cursor_down: bool = constants.cursor_down.into();
+    let cursor_right_down: bool = constants.cursor_right_down.into();
+    if cursor_down || cursor_right_down {
+        let cursor: Vec2 = constants.cursor.into();
+        if cursor.distance_squared(pos) < 1000.0 {
+            let tone = rand(pos / constants.size.as_vec2() * (constants.time % 1.0));
+            let particle = if cursor_down {
+                Particle::sand_from_tone(tone)
+            } else {
+                Particle::empty_from_tone(tone)
+            };
+            grid.set(pos.x as usize, pos.y as usize, particle);
+        }
+    }
 }
 
 #[spirv(vertex)]

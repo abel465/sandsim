@@ -18,6 +18,10 @@ impl Size {
     pub fn aspect_ratio(self) -> f32 {
         self.width as f32 / self.height as f32
     }
+
+    pub fn as_vec2(self) -> glam::Vec2 {
+        glam::vec2(self.width as f32, self.height as f32)
+    }
 }
 
 #[cfg(not(target_arch = "spirv"))]

@@ -21,12 +21,16 @@ pub struct Controller {
     grid: Grid<Particle>,
     cursor: Vec2,
     cursor_down: bool,
+    cursor_right_down: bool,
 }
 
 impl Controller {
     pub fn new(size: PhysicalSize<u32>) -> Self {
         let now = Instant::now();
-        let grid = Grid::<Particle>::new(size.width as usize, size.height as usize);
+        let grid =
+            Grid::<Particle>::from_fn(size.width as usize, size.height as usize, |_, _| {
+                Particle::default()
+            });
 
         Self {
             size,
@@ -35,6 +39,7 @@ impl Controller {
             grid,
             cursor: Vec2::ZERO,
             cursor_down: false,
+            cursor_right_down: false,
         }
     }
 
@@ -52,6 +57,11 @@ impl Controller {
                 ElementState::Pressed => true,
                 ElementState::Released => false,
             };
+        } else if button == MouseButton::Right {
+            self.cursor_right_down = match state {
+                ElementState::Pressed => true,
+                ElementState::Released => false,
+            };
         }
     }
 
@@ -62,6 +72,7 @@ impl Controller {
             size: self.size.into(),
             time: self.start.elapsed().as_secs_f32(),
             cursor_down: self.cursor_down.into(),
+            cursor_right_down: self.cursor_right_down.into(),
             cursor: self.cursor.into(),
         }
     }
