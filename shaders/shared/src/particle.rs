@@ -37,23 +37,28 @@ impl ParticleType {
 #[repr(C)]
 pub struct Particle {
     pub behaviour: u32,
-    tone: f32,
+    pub tone: f32,
 }
 
 impl Particle {
     fn color_range(&self) -> (Vec3, Vec3) {
-      ParticleType::from_value(self.behaviour).color_range()
+        ParticleType::from_value(self.behaviour).color_range()
     }
 
     pub fn color(&self) -> Vec3 {
-      let (c1, c2) = self.color_range();
-      c1.lerp(c2, self.tone)
+        let (c1, c2) = self.color_range();
+        c1.lerp(c2, self.tone)
     }
-    pub fn new_sand2() -> Self {
+
+    pub fn new_from_tone(behaviour: ParticleType, tone: f32) -> Self {
         Self {
-            behaviour: 1,
-            tone: 0.0,
+            behaviour: behaviour as u32,
+            tone,
         }
+    }
+
+    pub fn sand_from_tone(tone: f32) -> Self {
+        Self::new_from_tone(ParticleType::Sand, tone)
     }
 }
 

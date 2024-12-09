@@ -1,4 +1,3 @@
-use glam::Vec2;
 #[cfg(not(feature = "std"))]
 use num_traits::Float;
 
@@ -20,14 +19,6 @@ impl<'a, T: Copy> GridRef<'a, T> {
 
     pub fn get(&self, x: usize, y: usize) -> T {
         self.buffer[y * self.w + x]
-    }
-
-    pub fn signed_distance(&self, p: Vec2) -> T {
-        let ar = self.aspect_ratio();
-        debug_assert!(p.x.abs() < 0.5 * ar && p.y.abs() < 0.5);
-        let x = ((p.x + 0.5 * ar) / ar * self.w as f32) as usize;
-        let y = ((0.5 - p.y) * self.h as f32) as usize;
-        self.get(x, y)
     }
 }
 
@@ -62,9 +53,5 @@ impl<'a, T: Copy> GridRefMut<'a, T> {
         let tmp = self.buffer[y0 * self.w + x0];
         self.buffer[y0 * self.w + x0] = self.buffer[y1 * self.w + x1];
         self.buffer[y1 * self.w + x1] = tmp;
-    }
-
-    pub fn signed_distance(&self, p: Vec2) -> T {
-        self.as_ref().signed_distance(p)
     }
 }

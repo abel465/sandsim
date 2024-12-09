@@ -1,5 +1,4 @@
 use crate::gridref::{GridRef, GridRefMut};
-use glam::*;
 
 pub struct Grid<T> {
     pub w: usize,
@@ -62,9 +61,5 @@ where
 
     pub fn swap(&mut self, x0: usize, y0: usize, x1: usize, y1: usize) {
         GridRefMut::new(self.w, self.h, &mut self.buffer).swap(x0, y0, x1, y1)
-    }
-
-    pub fn signed_distance(&self, p: Vec2) -> T {
-        self.as_ref().signed_distance(p)
     }
 }

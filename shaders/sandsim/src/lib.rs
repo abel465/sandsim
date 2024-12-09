@@ -26,11 +26,15 @@ pub fn main_fs(
 
     if constants.cursor_down.into() {
         let cursor: Vec2 = constants.cursor.into();
-        if cursor.distance_squared(frag_coord.xy()) < 100.0 {
+        if cursor.distance_squared(frag_coord.xy()) < 1000.0 {
+            let tone = rand(
+                frag_coord.xy() / vec2(constants.size.width as f32, constants.size.height as f32)
+                    * (constants.time % 1.0),
+            );
             grid.set(
                 frag_coord.x as usize,
                 frag_coord.y as usize,
-                Particle::new_sand2(),
+                Particle::sand_from_tone(tone),
             );
         }
     }
