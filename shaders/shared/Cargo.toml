@@ -8,10 +8,10 @@ license.workspace = true
 
 [dependencies]
 spirv-std = { workspace = true }
-bytemuck = { version = "1.15.0", features = ["derive"] }
+bytemuck = { workspace = true, features = ["derive"] }
 
 [target.'cfg(not(any(target_arch = "spirv")))'.dependencies]
 strum = { version = "0.26.2", features = ["derive"] }
-winit = { version = "0.29.15", default-features = false }
+winit = { version = "0.30.5", default-features = false }
 rayon = "1.10.0"
 rand = "0.8.5"

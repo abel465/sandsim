@@ -57,7 +57,7 @@ impl RenderPass {
         );
         let bind_groups = maybe_create_bind_groups(ctx, buffer_data);
 
-        let ui_renderer = egui_wgpu::Renderer::new(&ctx.device, ctx.config.format, None, 1);
+        let ui_renderer = egui_wgpu::Renderer::new(&ctx.device, ctx.config.format, None, 1, false);
 
         Self {
             render_pipeline,
@@ -178,7 +178,7 @@ impl RenderPass {
         );
 
         {
-            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("UI Render Pass"),
                 occlusion_query_set: None,
                 timestamp_writes: None,
@@ -197,8 +197,11 @@ impl RenderPass {
                 self.ui_renderer.free_texture(id);
             }
 
-            self.ui_renderer
-                .render(&mut rpass, &clipped_primitives, &screen_descriptor);
+            self.ui_renderer.render(
+                &mut rpass.forget_lifetime(),
+                &clipped_primitives,
+                &screen_descriptor,
+            );
         }
 
         ctx.queue.submit(Some(encoder.finish()));
@@ -339,6 +342,7 @@ fn create_pipeline(
             compilation_options: Default::default(),
         }),
         multiview: None,
+        cache: None,
     })
 }
 
