@@ -1,6 +1,6 @@
 use crate::{
     bind_group_buffer::{BindGroupBufferType, BufferData, SSBO},
-    window::UserEvent,
+    user_event::UserEvent,
 };
 use bytemuck::Zeroable;
 use egui::Context;

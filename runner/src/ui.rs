@@ -1,4 +1,4 @@
-use crate::{controller::Controller, fps_counter::FpsCounter, window::UserEvent};
+use crate::{controller::Controller, fps_counter::FpsCounter, user_event::UserEvent};
 use egui::{
     epaint::{textures::TexturesDelta, ClippedPrimitive},
     Context,
@@ -7,6 +7,7 @@ use egui_winit::{
     winit::{event::WindowEvent, event_loop::EventLoopProxy, window::Window},
     State,
 };
+use std::sync::Arc;
 
 pub struct UiState {
     pub fps: usize,
@@ -31,13 +32,13 @@ pub struct Ui {
 }
 
 impl Ui {
-    pub fn new(window: &Window, event_proxy: EventLoopProxy<UserEvent>) -> Self {
+    pub fn new(window: Arc<Window>, event_proxy: EventLoopProxy<UserEvent>) -> Self {
         let context = Context::default();
         let viewport_id = context.viewport_id();
         let egui_winit_state = State::new(
             context,
             viewport_id,
-            window,
+            &window,
             Some(window.scale_factor() as f32),
             None,
             None,

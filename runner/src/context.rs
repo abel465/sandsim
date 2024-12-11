@@ -1,15 +1,16 @@
 use crate::Options;
 use egui_winit::winit::{dpi::PhysicalSize, window::Window};
+use std::sync::Arc;
 
-pub struct GraphicsContext<'a> {
-    pub surface: wgpu::Surface<'a>,
+pub struct GraphicsContext {
+    pub surface: wgpu::Surface<'static>,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub config: wgpu::SurfaceConfiguration,
 }
 
-impl<'a> GraphicsContext<'a> {
-    pub async fn new(window: &'a Window, options: &Options) -> GraphicsContext<'a> {
+impl GraphicsContext {
+    pub async fn new(window: Arc<Window>, options: &Options) -> GraphicsContext {
         let backends = wgpu::util::backend_bits_from_env()
             .unwrap_or(wgpu::Backends::VULKAN | wgpu::Backends::METAL);
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -19,6 +20,7 @@ impl<'a> GraphicsContext<'a> {
             gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
         });
 
+        let inner_size = window.inner_size();
         let initial_surface = instance
             .create_surface(window)
             .expect("Failed to create surface from window");
@@ -74,7 +76,7 @@ impl<'a> GraphicsContext<'a> {
         }
 
         let (surface, config) =
-            auto_configure_surface(&adapter, &device, initial_surface, window.inner_size());
+            auto_configure_surface(&adapter, &device, initial_surface, inner_size);
 
         GraphicsContext {
             surface,
