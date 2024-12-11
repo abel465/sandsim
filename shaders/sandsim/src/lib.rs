@@ -13,6 +13,11 @@ const EMPTY: u32 = 0;
 const SAND: u32 = 1;
 const WATER: u32 = 2;
 
+const TOP_LEFT: [usize; 2] = [0, 0];
+const TOP_RIGHT: [usize; 2] = [1, 0];
+const BOT_LEFT: [usize; 2] = [0, 1];
+const BOT_RIGHT: [usize; 2] = [1, 1];
+
 #[spirv(fragment)]
 pub fn main_fs(
     #[spirv(frag_coord)] frag_coord: Vec4,
@@ -31,20 +36,33 @@ pub fn main_fs(
 
     let x = pos.x as usize;
     let y = pos.y as usize;
-    let val = grid.get(x, y);
-    match val.behaviour {
-        EMPTY => {}
-        SAND => {
-            let s = grid.get(x, y + 1);
-            if s.behaviour == EMPTY {
-                grid.swap(x, y, x, y + 1)
+    let offset = constants.offset as usize;
+    if x % 2 == offset && y % 2 == offset {
+        let top_left = grid.get(x, y).behaviour;
+        let top_right = grid.get(x + 1, y).behaviour;
+        let bottom_left = grid.get(x, y + 1).behaviour;
+        let bottom_right = grid.get(x + 1, y + 1).behaviour;
+        let mut swap = |p0: [usize; 2], p1: [usize; 2]| {
+            grid.swap(x + p0[0], y + p0[1], x + p1[0], y + p1[1]);
+        };
+        match [[top_left, top_right], [bottom_left, bottom_right]] {
+            [[SAND, EMPTY], [EMPTY, EMPTY]] => swap(TOP_LEFT, BOT_LEFT),
+            [[EMPTY, SAND], [EMPTY, EMPTY]] => swap(TOP_RIGHT, BOT_RIGHT),
+            [[SAND, SAND], [EMPTY, EMPTY]] => {
+                swap(TOP_LEFT, BOT_LEFT);
+                swap(TOP_RIGHT, BOT_RIGHT);
             }
-        }
-        WATER => {}
-        _ => panic!(),
+            [[SAND, SAND], [EMPTY, SAND]] => swap(TOP_LEFT, BOT_LEFT),
+            [[SAND, SAND], [SAND, EMPTY]] => swap(TOP_RIGHT, BOT_RIGHT),
+            [[EMPTY, SAND], [SAND, EMPTY]] => swap(TOP_RIGHT, BOT_RIGHT),
+            [[SAND, EMPTY], [EMPTY, SAND]] => swap(TOP_LEFT, BOT_LEFT),
+            [[EMPTY, SAND], [EMPTY, SAND]] => swap(TOP_RIGHT, BOT_LEFT),
+            [[SAND, EMPTY], [SAND, EMPTY]] => swap(TOP_LEFT, BOT_RIGHT),
+            _ => {}
+        };
     }
 
-    *output = val.color().powf(2.2).extend(1.0);
+    *output = grid.get(x, y).color().powf(2.2).extend(1.0);
 }
 
 fn distance_sq_to_line_segment(p: Vec2, v: Vec2, w: Vec2) -> f32 {

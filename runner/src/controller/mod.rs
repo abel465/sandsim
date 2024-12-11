@@ -25,6 +25,7 @@ pub struct Controller {
     cursor_right_down: bool,
     current_particle_type: ParticleType,
     brush_size: f32,
+    offset: u32,
 }
 
 impl Controller {
@@ -45,6 +46,7 @@ impl Controller {
             cursor_right_down: false,
             current_particle_type: ParticleType::Sand,
             brush_size: 20.0,
+            offset: 0,
         }
     }
 
@@ -86,8 +88,10 @@ impl Controller {
             prev_cursor: self.prev_cursor.into(),
             current_particle_type: particle_type as u32,
             brush_size_sq: self.brush_size * self.brush_size,
+            offset: self.offset,
         };
         self.prev_cursor = self.cursor;
+        self.offset = 1 - self.offset;
     }
 
     pub fn push_constants(&self) -> &[u8] {
