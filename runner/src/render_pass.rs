@@ -76,8 +76,8 @@ impl RenderPass {
         inner_size: &PhysicalSize<u32>,
         controller: &mut Controller,
     ) {
-        let m = inner_size.width;
-        let n = inner_size.height;
+        let m = inner_size.width / 2;
+        let n = inner_size.height / 2;
         let w = glam::UVec3::new(16, 16, 1);
         let x = ((m as f32) / (w.x as f32)).ceil() as u32;
         let y = ((n as f32) / (w.y as f32)).ceil() as u32;

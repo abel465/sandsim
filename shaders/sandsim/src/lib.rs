@@ -81,5 +81,6 @@ pub fn main_cs(
         constants.size.height as usize,
         grid_buffer,
     );
-    update::update(constants, gid.xy(), &mut grid);
+    let pos = gid.xy() * 2 + constants.offset;
+    update::update(pos, &mut grid);
 }
