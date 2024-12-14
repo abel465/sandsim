@@ -94,6 +94,8 @@ impl App {
             return;
         };
         gfx.controller.update();
+        gfx.rpass
+            .compute(&gfx.ctx, &gfx.window.inner_size(), &mut gfx.controller);
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -126,8 +128,7 @@ impl App {
         let Self::Graphics(gfx) = self else {
             return;
         };
-        let buffers = gfx.controller.buffers();
-        gfx.rpass.new_module(&gfx.ctx, new_module, &buffers);
+        gfx.rpass.new_module(&gfx.ctx, new_module);
         gfx.window.request_redraw();
     }
 

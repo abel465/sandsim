@@ -6,7 +6,7 @@ use crate::{
     ui::{Ui, UiState},
     Options,
 };
-use egui_winit::winit::window::Window;
+use egui_winit::winit::{dpi::PhysicalSize, window::Window};
 use wgpu::{util::DeviceExt, BindGroupLayout, TextureView};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -15,14 +15,27 @@ mod shaders {
     pub const main_fs: &str = "main_fs";
     #[allow(non_upper_case_globals)]
     pub const main_vs: &str = "main_vs";
+    #[allow(non_upper_case_globals)]
+    pub const main_cs: &str = "main_cs";
 }
 #[cfg(target_arch = "wasm32")]
 mod shaders {
     include!(concat!(env!("OUT_DIR"), "/entry_points.rs"));
 }
 
+struct Pipelines {
+    render: wgpu::RenderPipeline,
+    compute: wgpu::ComputePipeline,
+}
+
+struct PipelineLayouts {
+    render: wgpu::PipelineLayout,
+    compute: wgpu::PipelineLayout,
+}
+
 pub struct RenderPass {
-    render_pipeline: wgpu::RenderPipeline,
+    pipelines: Pipelines,
+    pipeline_layouts: PipelineLayouts,
     ui_renderer: egui_wgpu::Renderer,
     options: Options,
     bind_groups: Vec<wgpu::BindGroup>,
@@ -35,36 +48,65 @@ impl RenderPass {
         options: Options,
         buffer_data: &BufferData,
     ) -> Self {
-        let layouts = bind_group_layouts(ctx, buffer_data);
-        let layout_refs = &layouts.iter().collect::<Vec<_>>();
-        let pipeline_layout = ctx
-            .device
-            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: None,
-                bind_group_layouts: layout_refs,
-                push_constant_ranges: &[wgpu::PushConstantRange {
-                    stages: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                    range: 0..shared::push_constants::mem_size() as u32,
-                }],
-            });
-
-        let render_pipeline = create_pipeline(
+        let bind_group_layouts = create_bind_group_layouts(ctx, buffer_data);
+        let pipeline_layouts = create_pipeline_layouts(ctx, &bind_group_layouts);
+        let pipelines = create_pipeline(
             &options,
             &ctx.device,
-            &pipeline_layout,
+            &pipeline_layouts,
             ctx.config.format,
             compiled_shader_modules,
         );
-        let bind_groups = maybe_create_bind_groups(ctx, buffer_data);
+        let bind_groups = maybe_create_bind_groups(ctx, buffer_data, &bind_group_layouts);
 
         let ui_renderer = egui_wgpu::Renderer::new(&ctx.device, ctx.config.format, None, 1, false);
 
         Self {
-            render_pipeline,
+            pipelines,
+            pipeline_layouts,
             ui_renderer,
             options,
             bind_groups,
         }
+    }
+
+    pub fn compute(
+        &mut self,
+        ctx: &GraphicsContext,
+        inner_size: &PhysicalSize<u32>,
+        controller: &mut Controller,
+    ) {
+        let m = inner_size.width;
+        let n = inner_size.height;
+        let w = glam::UVec3::new(16, 16, 1);
+        let x = ((m as f32) / (w.x as f32)).ceil() as u32;
+        let y = ((n as f32) / (w.y as f32)).ceil() as u32;
+        self.call(ctx, (x, y, 1), controller);
+    }
+
+    pub fn call(
+        &mut self,
+        ctx: &GraphicsContext,
+        workspace: (u32, u32, u32),
+        controller: &mut Controller,
+    ) {
+        let mut encoder = ctx
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        {
+            let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: None,
+                timestamp_writes: None,
+            });
+
+            cpass.set_pipeline(&self.pipelines.compute);
+            cpass.set_push_constants(0, controller.push_constants());
+            for (i, bind_group) in self.bind_groups.iter().enumerate() {
+                cpass.set_bind_group(i as u32, bind_group, &[]);
+            }
+            cpass.dispatch_workgroups(workspace.0, workspace.1, workspace.2);
+        }
+        ctx.queue.submit(Some(encoder.finish()));
     }
 
     pub fn render(
@@ -127,12 +169,8 @@ impl RenderPass {
                 depth_stencil_attachment: None,
             });
 
-            rpass.set_pipeline(&self.render_pipeline);
-            rpass.set_push_constants(
-                wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                0,
-                controller.push_constants(),
-            );
+            rpass.set_pipeline(&self.pipelines.render);
+            rpass.set_push_constants(wgpu::ShaderStages::FRAGMENT, 0, controller.push_constants());
             for (i, bind_group) in self.bind_groups.iter().enumerate() {
                 rpass.set_bind_group(i as u32, bind_group, &[]);
             }
@@ -207,28 +245,11 @@ impl RenderPass {
         ctx.queue.submit(Some(encoder.finish()));
     }
 
-    pub fn new_module(
-        &mut self,
-        ctx: &GraphicsContext,
-        new_module: CompiledShaderModules,
-        buffer_data: &BufferData,
-    ) {
-        let layouts = bind_group_layouts(ctx, buffer_data);
-        let layout_refs = &layouts.iter().collect::<Vec<_>>();
-        let pipeline_layout = ctx
-            .device
-            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: None,
-                bind_group_layouts: layout_refs,
-                push_constant_ranges: &[wgpu::PushConstantRange {
-                    stages: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                    range: 0..shared::push_constants::mem_size() as u32,
-                }],
-            });
-        self.render_pipeline = create_pipeline(
+    pub fn new_module(&mut self, ctx: &GraphicsContext, new_module: CompiledShaderModules) {
+        self.pipelines = create_pipeline(
             &self.options,
             &ctx.device,
-            &pipeline_layout,
+            &self.pipeline_layouts,
             ctx.config.format,
             new_module,
         );
@@ -238,11 +259,12 @@ impl RenderPass {
 fn maybe_create_bind_groups(
     ctx: &GraphicsContext,
     buffer_data: &BufferData,
+    bind_group_layouts: &Vec<BindGroupLayout>,
 ) -> Vec<wgpu::BindGroup> {
     buffer_data
         .bind_group_buffers
         .iter()
-        .zip(bind_group_layouts(ctx, buffer_data))
+        .zip(bind_group_layouts)
         .enumerate()
         .map(|(i, (buffer, layout))| {
             let buffer = ctx.device.create_buffer_init(&match buffer {
@@ -258,7 +280,7 @@ fn maybe_create_bind_groups(
                 },
             });
             ctx.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &layout,
+                layout: layout,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
                     resource: buffer.as_entire_binding(),
@@ -272,10 +294,10 @@ fn maybe_create_bind_groups(
 fn create_pipeline(
     options: &Options,
     device: &wgpu::Device,
-    pipeline_layout: &wgpu::PipelineLayout,
+    pipeline_layouts: &PipelineLayouts,
     surface_format: wgpu::TextureFormat,
     compiled_shader_modules: CompiledShaderModules,
-) -> wgpu::RenderPipeline {
+) -> Pipelines {
     // FIXME(eddyb) automate this decision by default.
     let create_module = |module| {
         if options.validate_spirv {
@@ -291,12 +313,15 @@ fn create_pipeline(
 
     let vs_entry_point = shaders::main_vs;
     let fs_entry_point = shaders::main_fs;
+    let cs_entry_point = shaders::main_cs;
 
     let vs_module_descr = compiled_shader_modules.spv_module_for_entry_point(vs_entry_point);
     let fs_module_descr = compiled_shader_modules.spv_module_for_entry_point(fs_entry_point);
+    let cs_module_descr = compiled_shader_modules.spv_module_for_entry_point(cs_entry_point);
 
     // HACK(eddyb) avoid calling `device.create_shader_module` twice unnecessarily.
     let vs_fs_same_module = std::ptr::eq(&vs_module_descr.source[..], &fs_module_descr.source[..]);
+    let vs_cs_same_module = std::ptr::eq(&vs_module_descr.source[..], &cs_module_descr.source[..]);
 
     let vs_module = &create_module(vs_module_descr);
     let fs_module;
@@ -306,10 +331,17 @@ fn create_pipeline(
         fs_module = create_module(fs_module_descr);
         &fs_module
     };
+    let cs_module;
+    let cs_module = if vs_cs_same_module {
+        vs_module
+    } else {
+        cs_module = create_module(cs_module_descr);
+        &cs_module
+    };
 
-    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+    let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: None,
-        layout: Some(pipeline_layout),
+        layout: Some(&pipeline_layouts.render),
         vertex: wgpu::VertexState {
             module: vs_module,
             entry_point: vs_entry_point,
@@ -343,10 +375,25 @@ fn create_pipeline(
         }),
         multiview: None,
         cache: None,
-    })
+    });
+    let compute_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        label: None,
+        layout: Some(&pipeline_layouts.compute),
+        module: &cs_module,
+        entry_point: cs_entry_point,
+        compilation_options: Default::default(),
+        cache: None,
+    });
+    Pipelines {
+        render: render_pipeline,
+        compute: compute_pipeline,
+    }
 }
 
-fn bind_group_layouts(ctx: &GraphicsContext, buffer_data: &BufferData) -> Vec<BindGroupLayout> {
+fn create_bind_group_layouts(
+    ctx: &GraphicsContext,
+    buffer_data: &BufferData,
+) -> Vec<BindGroupLayout> {
     buffer_data
         .bind_group_buffers
         .iter()
@@ -375,4 +422,26 @@ fn bind_group_layouts(ctx: &GraphicsContext, buffer_data: &BufferData) -> Vec<Bi
                 })
         })
         .collect()
+}
+
+fn create_pipeline_layouts(
+    ctx: &GraphicsContext,
+    bind_group_layouts: &[BindGroupLayout],
+) -> PipelineLayouts {
+    let bind_group_layouts = &bind_group_layouts.iter().collect::<Vec<_>>();
+    let create = |stages| {
+        ctx.device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts,
+                push_constant_ranges: &[wgpu::PushConstantRange {
+                    stages,
+                    range: 0..shared::push_constants::mem_size() as u32,
+                }],
+            })
+    };
+    PipelineLayouts {
+        render: create(wgpu::ShaderStages::FRAGMENT),
+        compute: create(wgpu::ShaderStages::COMPUTE),
+    }
 }
