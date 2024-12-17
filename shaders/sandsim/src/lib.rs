@@ -11,8 +11,6 @@ use spirv_std::spirv;
 
 mod update;
 
-const DEBUG: bool = false;
-
 fn distance_sq_to_line_segment(p: Vec2, v: Vec2, w: Vec2) -> f32 {
     // Return the distance squared between point p and line segment vw
     let l2 = v.distance_squared(w); // i.e. |w-v|^2 -  avoid a sqrt
@@ -81,7 +79,7 @@ pub fn main_fs(
         .powf(2.2)
         .extend(1.0);
 
-    if DEBUG {
+    if constants.debug.into() {
         debug(constants, pos, output);
     }
 }

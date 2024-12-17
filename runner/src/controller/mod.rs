@@ -32,6 +32,7 @@ pub struct Controller {
     distance: f32,
     last_frame: Instant,
     zoom: f32,
+    debug: bool,
 }
 
 impl Controller {
@@ -58,6 +59,7 @@ impl Controller {
             distance: 0.0,
             last_frame: now,
             zoom: 1.0,
+            debug: false,
         }
     }
 
@@ -119,6 +121,7 @@ impl Controller {
             brush_size_sq: self.brush_size * self.brush_size / (self.zoom * self.zoom),
             offset: self.offset,
             zoom: self.zoom,
+            debug: self.debug.into(),
         };
         self.prev_cursor = self.cursor;
     }
@@ -170,6 +173,7 @@ impl Controller {
                 .logarithmic(true)
                 .max_decimals(2),
         );
+        ui.checkbox(&mut self.debug, "Debug");
     }
 
     pub fn buffers(&self) -> BufferData {

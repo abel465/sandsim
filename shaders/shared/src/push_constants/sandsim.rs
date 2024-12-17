@@ -13,6 +13,7 @@ pub struct FragmentConstants {
     pub brush_size_sq: f32,
     pub offset: u32,
     pub zoom: f32,
+    pub debug: Bool,
 }
 
 impl FragmentConstants {
