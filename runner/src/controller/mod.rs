@@ -8,6 +8,7 @@ use egui_winit::winit::{
     dpi::{PhysicalPosition, PhysicalSize},
     event::{ElementState, KeyEvent, MouseButton, MouseScrollDelta},
     event_loop::EventLoopProxy,
+    keyboard::Key,
 };
 use glam::*;
 use shared::grid::*;
@@ -91,7 +92,16 @@ impl Controller {
         }
     }
 
-    pub fn keyboard_input(&mut self, _key: KeyEvent) {}
+    pub fn keyboard_input(&mut self, key: KeyEvent) {
+        match key.logical_key {
+            Key::Character(x) if x.as_str() == "x" => {
+                if key.state.is_pressed() {
+                    self.distance += 1.0;
+                };
+            }
+            _ => {}
+        }
+    }
 
     pub fn pre_render(&mut self) {
         let particle_type = if self.cursor_right_down {
