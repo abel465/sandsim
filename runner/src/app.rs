@@ -93,9 +93,12 @@ impl App {
         let Self::Graphics(gfx) = self else {
             return;
         };
-        gfx.controller.update();
-        gfx.rpass
-            .compute(&gfx.ctx, &gfx.window.inner_size(), &mut gfx.controller);
+        for _ in 0..gfx.controller.iterations() {
+            gfx.controller.pre_update();
+            gfx.rpass
+                .compute(&gfx.ctx, &gfx.window.inner_size(), &mut gfx.controller);
+            gfx.controller.post_update();
+        }
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -103,6 +106,7 @@ impl App {
             return Ok(());
         };
         gfx.window.request_redraw();
+        gfx.controller.pre_render();
         gfx.rpass.render(
             &gfx.ctx,
             &gfx.window,

@@ -74,7 +74,7 @@ impl RenderPass {
         &mut self,
         ctx: &GraphicsContext,
         inner_size: &PhysicalSize<u32>,
-        controller: &mut Controller,
+        controller: &Controller,
     ) {
         let m = inner_size.width / 2;
         let n = inner_size.height / 2;
@@ -88,7 +88,7 @@ impl RenderPass {
         &mut self,
         ctx: &GraphicsContext,
         workspace: (u32, u32, u32),
-        controller: &mut Controller,
+        controller: &Controller,
     ) {
         let mut encoder = ctx
             .device
@@ -100,7 +100,7 @@ impl RenderPass {
             });
 
             cpass.set_pipeline(&self.pipelines.compute);
-            cpass.set_push_constants(0, controller.push_constants());
+            cpass.set_push_constants(0, controller.compute_constants());
             for (i, bind_group) in self.bind_groups.iter().enumerate() {
                 cpass.set_bind_group(i as u32, bind_group, &[]);
             }
@@ -170,7 +170,11 @@ impl RenderPass {
             });
 
             rpass.set_pipeline(&self.pipelines.render);
-            rpass.set_push_constants(wgpu::ShaderStages::FRAGMENT, 0, controller.push_constants());
+            rpass.set_push_constants(
+                wgpu::ShaderStages::FRAGMENT,
+                0,
+                controller.fragment_constants(),
+            );
             for (i, bind_group) in self.bind_groups.iter().enumerate() {
                 rpass.set_bind_group(i as u32, bind_group, &[]);
             }
@@ -403,7 +407,7 @@ fn create_bind_group_layouts(
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                     entries: &[wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        visibility: wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
                         ty: wgpu::BindingType::Buffer {
                             ty: (match buffer {
                                 BindGroupBufferType::Uniform(_) => wgpu::BufferBindingType::Uniform,
@@ -429,19 +433,25 @@ fn create_pipeline_layouts(
     bind_group_layouts: &[BindGroupLayout],
 ) -> PipelineLayouts {
     let bind_group_layouts = &bind_group_layouts.iter().collect::<Vec<_>>();
-    let create = |stages| {
+    let create = |stages, mem_size| {
         ctx.device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: None,
                 bind_group_layouts,
                 push_constant_ranges: &[wgpu::PushConstantRange {
                     stages,
-                    range: 0..shared::push_constants::mem_size() as u32,
+                    range: 0..mem_size as u32,
                 }],
             })
     };
     PipelineLayouts {
-        render: create(wgpu::ShaderStages::FRAGMENT),
-        compute: create(wgpu::ShaderStages::COMPUTE),
+        render: create(
+            wgpu::ShaderStages::FRAGMENT,
+            shared::push_constants::sandsim::FragmentConstants::mem_size(),
+        ),
+        compute: create(
+            wgpu::ShaderStages::COMPUTE,
+            shared::push_constants::sandsim::ComputeConstants::mem_size(),
+        ),
     }
 }

@@ -3,10 +3,6 @@ use spirv_std::glam;
 
 pub mod sandsim;
 
-pub fn mem_size() -> usize {
-    core::mem::size_of::<sandsim::ShaderConstants>()
-}
-
 #[derive(Copy, Clone, Pod, Zeroable)]
 #[repr(C)]
 pub struct Size {

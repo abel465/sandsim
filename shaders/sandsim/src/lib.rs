@@ -1,6 +1,6 @@
 #![cfg_attr(target_arch = "spirv", no_std)]
 
-use push_constants::sandsim::ShaderConstants;
+use push_constants::sandsim::*;
 use shared::gridref::*;
 use shared::particle::*;
 use shared::*;
@@ -26,7 +26,7 @@ fn distance_sq_to_line_segment(p: Vec2, v: Vec2, w: Vec2) -> f32 {
     return p.distance_squared(projection);
 }
 
-fn handle_cursor_down(constants: &ShaderConstants, pos: Vec2, grid: &mut GridRefMut<Particle>) {
+fn handle_cursor_down(constants: &FragmentConstants, pos: Vec2, grid: &mut GridRefMut<Particle>) {
     if constants.cursor_down.into() {
         let prev_cursor: Vec2 = constants.prev_cursor.into();
         let cursor: Vec2 = constants.cursor.into();
@@ -42,7 +42,7 @@ fn handle_cursor_down(constants: &ShaderConstants, pos: Vec2, grid: &mut GridRef
 #[spirv(fragment)]
 pub fn main_fs(
     #[spirv(frag_coord)] frag_coord: Vec4,
-    #[spirv(push_constant)] constants: &ShaderConstants,
+    #[spirv(push_constant)] constants: &FragmentConstants,
     #[spirv(storage_buffer, descriptor_set = 0, binding = 0)] grid_buffer: &mut [Particle],
     output: &mut Vec4,
 ) {
@@ -73,7 +73,7 @@ pub fn main_vs(
 #[spirv(compute(threads(16, 16)))]
 pub fn main_cs(
     #[spirv(global_invocation_id)] gid: UVec3,
-    #[spirv(push_constant)] constants: &ShaderConstants,
+    #[spirv(push_constant)] constants: &ComputeConstants,
     #[spirv(storage_buffer, descriptor_set = 0, binding = 0)] grid_buffer: &mut [Particle],
 ) {
     let mut grid = GridRefMut::new(

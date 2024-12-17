@@ -11,13 +11,14 @@ use egui_winit::winit::{
 };
 use glam::*;
 use shared::grid::*;
-use shared::{particle::*, push_constants::sandsim::ShaderConstants};
+use shared::{particle::*, push_constants::sandsim::*};
 use std::time::Instant;
 
 pub struct Controller {
     size: PhysicalSize<u32>,
     start: Instant,
-    shader_constants: ShaderConstants,
+    fragment_constants: FragmentConstants,
+    compute_constants: ComputeConstants,
     grid: Grid<Particle>,
     cursor: Vec2,
     prev_cursor: Vec2,
@@ -26,6 +27,9 @@ pub struct Controller {
     current_particle_type: ParticleType,
     brush_size: f32,
     offset: u32,
+    speed: f32,
+    distance: f32,
+    last_frame: Instant,
 }
 
 impl Controller {
@@ -38,7 +42,8 @@ impl Controller {
         Self {
             size,
             start: now,
-            shader_constants: ShaderConstants::zeroed(),
+            fragment_constants: FragmentConstants::zeroed(),
+            compute_constants: ComputeConstants::zeroed(),
             grid,
             cursor: Vec2::ZERO,
             prev_cursor: Vec2::ZERO,
@@ -47,6 +52,9 @@ impl Controller {
             current_particle_type: ParticleType::Sand,
             brush_size: 20.0,
             offset: 0,
+            speed: normalize_speed_down(1.0),
+            distance: 0.0,
+            last_frame: now,
         }
     }
 
@@ -74,13 +82,13 @@ impl Controller {
 
     pub fn keyboard_input(&mut self, _key: KeyEvent) {}
 
-    pub fn update(&mut self) {
+    pub fn pre_render(&mut self) {
         let particle_type = if self.cursor_right_down {
             ParticleType::Empty
         } else {
             self.current_particle_type
         };
-        self.shader_constants = ShaderConstants {
+        self.fragment_constants = FragmentConstants {
             size: self.size.into(),
             time: self.start.elapsed().as_secs_f32(),
             cursor_down: (self.cursor_down || self.cursor_right_down).into(),
@@ -88,14 +96,28 @@ impl Controller {
             prev_cursor: self.prev_cursor.into(),
             current_particle_type: particle_type as u32,
             brush_size_sq: self.brush_size * self.brush_size,
-            offset: self.offset,
         };
         self.prev_cursor = self.cursor;
+    }
+
+    pub fn pre_update(&mut self) {
+        self.compute_constants = ComputeConstants {
+            size: self.size.into(),
+            time: self.start.elapsed().as_secs_f32(),
+            offset: self.offset,
+        };
+    }
+
+    pub fn post_update(&mut self) {
         self.offset = 1 - self.offset;
     }
 
-    pub fn push_constants(&self) -> &[u8] {
-        bytemuck::bytes_of(&self.shader_constants)
+    pub fn fragment_constants(&self) -> &[u8] {
+        bytemuck::bytes_of(&self.fragment_constants)
+    }
+
+    pub fn compute_constants(&self) -> &[u8] {
+        bytemuck::bytes_of(&self.compute_constants)
     }
 
     pub fn ui(
@@ -112,6 +134,12 @@ impl Controller {
         );
         ui.add(egui::Label::new("       Brush Size").selectable(false));
         ui.add(egui::Slider::new(&mut self.brush_size, 1.0..=1000.0).logarithmic(true));
+        ui.add(egui::Label::new("       Simulation Speed").selectable(false));
+        ui.add(
+            egui::Slider::new(&mut self.speed, 0.0..=1.99)
+                .custom_formatter(|x, _| format!("{:.2}", normalize_speed_up(x as f32)))
+                .custom_parser(|x| x.parse().map(|x: f32| normalize_speed_down(x) as f64).ok()),
+        );
     }
 
     pub fn buffers(&self) -> BufferData {
@@ -122,4 +150,26 @@ impl Controller {
             })],
         }
     }
+
+    pub fn iterations(&mut self) -> u32 {
+        let speed = normalize_speed_up(self.speed);
+        let t = self.last_frame.elapsed().as_secs_f32() * 100.0;
+        self.last_frame = Instant::now();
+        self.distance += speed * t;
+        if self.distance >= 1.0 {
+            let iterations = self.distance as u32;
+            self.distance = self.distance.fract();
+            iterations
+        } else {
+            0
+        }
+    }
+}
+
+fn normalize_speed_down(x: f32) -> f32 {
+    (x / 25.0).sqrt()
+}
+
+fn normalize_speed_up(x: f32) -> f32 {
+    x * x * 25.0
 }
