@@ -28,8 +28,9 @@ fn distance_sq_to_line_segment(p: Vec2, v: Vec2, w: Vec2) -> f32 {
 
 fn handle_cursor_down(constants: &FragmentConstants, pos: Vec2, grid: &mut GridRefMut<Particle>) {
     if constants.cursor_down.into() {
-        let prev_cursor: Vec2 = constants.prev_cursor.into();
-        let cursor: Vec2 = constants.cursor.into();
+        let height = constants.size.height;
+        let prev_cursor = zoom(constants.prev_cursor.into(), height, constants.zoom);
+        let cursor = zoom(constants.cursor.into(), height, constants.zoom);
         if distance_sq_to_line_segment(pos, prev_cursor, cursor) < constants.brush_size_sq {
             let tone = rand(pos / constants.size.as_vec2() * (constants.time % 1.0));
             let particle_type = ParticleType::from_value(constants.current_particle_type);
@@ -37,6 +38,11 @@ fn handle_cursor_down(constants: &FragmentConstants, pos: Vec2, grid: &mut GridR
             grid.set(pos.x as usize, pos.y as usize, particle);
         }
     }
+}
+
+fn zoom(p: Vec2, height: u32, zoom: f32) -> Vec2 {
+    let height = height as f32;
+    p / zoom + Vec2::Y * (height - height / zoom)
 }
 
 #[spirv(fragment)]
@@ -52,7 +58,7 @@ pub fn main_fs(
         grid_buffer,
     );
 
-    let pos = frag_coord.xy();
+    let pos = zoom(frag_coord.xy(), constants.size.height, constants.zoom);
     handle_cursor_down(constants, pos, &mut grid);
 
     *output = grid

@@ -6,7 +6,7 @@ use bytemuck::Zeroable;
 use egui::Context;
 use egui_winit::winit::{
     dpi::{PhysicalPosition, PhysicalSize},
-    event::{ElementState, KeyEvent, MouseButton},
+    event::{ElementState, KeyEvent, MouseButton, MouseScrollDelta},
     event_loop::EventLoopProxy,
 };
 use glam::*;
@@ -30,6 +30,7 @@ pub struct Controller {
     speed: f32,
     distance: f32,
     last_frame: Instant,
+    zoom: f32,
 }
 
 impl Controller {
@@ -55,6 +56,7 @@ impl Controller {
             speed: normalize_speed_down(1.0),
             distance: 0.0,
             last_frame: now,
+            zoom: 1.0,
         }
     }
 
@@ -64,6 +66,15 @@ impl Controller {
 
     pub fn mouse_move(&mut self, position: PhysicalPosition<f64>) {
         self.cursor = vec2(position.x as f32, position.y as f32);
+    }
+
+    pub fn mouse_scroll(&mut self, delta: MouseScrollDelta) {
+        match delta {
+            MouseScrollDelta::LineDelta(_, val) => {
+                self.zoom = (self.zoom + self.zoom * val * 0.1).clamp(1.0, 100.0);
+            }
+            _ => unimplemented!(),
+        }
     }
 
     pub fn mouse_input(&mut self, state: ElementState, button: MouseButton) {
@@ -95,7 +106,8 @@ impl Controller {
             cursor: self.cursor.into(),
             prev_cursor: self.prev_cursor.into(),
             current_particle_type: particle_type as u32,
-            brush_size_sq: self.brush_size * self.brush_size,
+            brush_size_sq: self.brush_size * self.brush_size / (self.zoom * self.zoom),
+            zoom: self.zoom,
         };
         self.prev_cursor = self.cursor;
     }
@@ -105,6 +117,7 @@ impl Controller {
             size: self.size.into(),
             time: self.start.elapsed().as_secs_f32(),
             offset: self.offset,
+            zoom: self.zoom,
         };
     }
 
@@ -134,11 +147,17 @@ impl Controller {
         );
         ui.add(egui::Label::new("       Brush Size").selectable(false));
         ui.add(egui::Slider::new(&mut self.brush_size, 1.0..=1000.0).logarithmic(true));
-        ui.add(egui::Label::new("       Simulation Speed").selectable(false));
+        ui.add(egui::Label::new(" Simulation Speed").selectable(false));
         ui.add(
             egui::Slider::new(&mut self.speed, 0.0..=1.99)
                 .custom_formatter(|x, _| format!("{:.2}", normalize_speed_up(x as f32)))
                 .custom_parser(|x| x.parse().map(|x: f32| normalize_speed_down(x) as f64).ok()),
+        );
+        ui.add(egui::Label::new("           Zoom").selectable(false));
+        ui.add(
+            egui::Slider::new(&mut self.zoom, 1.0..=100.0)
+                .logarithmic(true)
+                .max_decimals(2),
         );
     }
 

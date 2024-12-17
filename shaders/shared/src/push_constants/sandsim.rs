@@ -11,6 +11,7 @@ pub struct FragmentConstants {
     pub cursor_down: Bool,
     pub current_particle_type: u32,
     pub brush_size_sq: f32,
+    pub zoom: f32,
 }
 
 impl FragmentConstants {
@@ -25,6 +26,7 @@ pub struct ComputeConstants {
     pub size: Size,
     pub time: f32,
     pub offset: u32,
+    pub zoom: f32,
 }
 
 impl ComputeConstants {

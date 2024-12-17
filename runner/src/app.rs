@@ -85,8 +85,11 @@ impl App {
         gfx.controller.mouse_move(position);
     }
 
-    pub fn mouse_scroll(&mut self, _delta: MouseScrollDelta) {
-        // self.controller.mouse_scroll(delta);
+    pub fn mouse_scroll(&mut self, delta: MouseScrollDelta) {
+        let Self::Graphics(gfx) = self else {
+            return;
+        };
+        gfx.controller.mouse_scroll(delta);
     }
 
     pub fn update(&mut self) {
