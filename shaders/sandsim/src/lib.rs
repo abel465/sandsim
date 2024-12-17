@@ -11,6 +11,8 @@ use spirv_std::spirv;
 
 mod update;
 
+const DEBUG: bool = false;
+
 fn distance_sq_to_line_segment(p: Vec2, v: Vec2, w: Vec2) -> f32 {
     // Return the distance squared between point p and line segment vw
     let l2 = v.distance_squared(w); // i.e. |w-v|^2 -  avoid a sqrt
@@ -45,6 +47,18 @@ fn zoom(p: Vec2, height: u32, zoom: f32) -> Vec2 {
     p / zoom + Vec2::Y * (height - height / zoom)
 }
 
+fn debug(constants: &FragmentConstants, pos: Vec2, output: &mut Vec4) {
+    let offset = constants.offset;
+    if constants.zoom > 20.0
+        && ((pos.x as u32 % 2 == offset && pos.x.fract() < 0.025)
+            || (pos.x as u32 % 2 == (1 - offset) && pos.x.fract() > 0.975)
+            || (pos.y as u32 % 2 == offset && pos.y.fract() < 0.025)
+            || (pos.y as u32 % 2 == (1 - offset) && pos.y.fract() > 0.975))
+    {
+        *output = Vec3::X.extend(1.0);
+    }
+}
+
 #[spirv(fragment)]
 pub fn main_fs(
     #[spirv(frag_coord)] frag_coord: Vec4,
@@ -66,6 +80,10 @@ pub fn main_fs(
         .color()
         .powf(2.2)
         .extend(1.0);
+
+    if DEBUG {
+        debug(constants, pos, output);
+    }
 }
 
 #[spirv(vertex)]
