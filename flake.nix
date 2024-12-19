@@ -3,7 +3,7 @@
 
   inputs = {
     fenix = {
-      url = "github:nix-community/fenix/5c3ff469526a6ca54a887fbda9d67aef4dd4a921";
+      url = "github:nix-community/fenix/3b89d5df39afc6ef3a8575fa92d8fa10ec68c95f";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -45,6 +45,7 @@
           vulkan-tools
           wayland
           libxkbcommon
+          libgcc.lib
         ];
         shadersCompilePath = "$HOME/.cache/rust-gpu-shaders";
         sandsim = rustPlatform.buildRustPackage {

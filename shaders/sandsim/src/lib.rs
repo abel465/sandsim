@@ -1,4 +1,4 @@
-#![cfg_attr(target_arch = "spirv", no_std)]
+#![no_std]
 
 use push_constants::sandsim::*;
 use shared::gridref::*;

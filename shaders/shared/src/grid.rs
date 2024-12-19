@@ -6,7 +6,7 @@ pub struct Grid<T> {
     pub buffer: Vec<T>,
 }
 
-impl<#[cfg(feature = "rayon")] T: Send, #[cfg(not(feature = "rayon"))] T> Grid<T>
+impl<T: Send> Grid<T>
 where
     T: Default + Clone + Copy,
 {
@@ -18,7 +18,7 @@ where
         }
     }
 
-    pub fn from_fn(w: usize, h: usize, f: fn(usize, usize) -> T) -> Self {
+    pub fn from_fn<F: Fn(usize, usize) -> T + Send + Sync>(w: usize, h: usize, f: F) -> Self {
         let mut res = Self::new(w, h);
         res.update(f);
         res
@@ -32,14 +32,10 @@ where
         GridRefMut::new(self.w, self.h, &mut self.buffer)
     }
 
-    pub fn update(&mut self, f: fn(usize, usize) -> T) {
-        #[cfg(feature = "rayon")]
+    pub fn update<F: Fn(usize, usize) -> T + Send + Sync>(&mut self, f: F) {
         use rayon::prelude::*;
 
-        #[cfg(feature = "rayon")]
         let iter = self.buffer.par_iter_mut();
-        #[cfg(not(feature = "rayon"))]
-        let iter = self.buffer.iter_mut();
 
         iter.enumerate().for_each(|(i, value)| {
             let y = i / self.w;

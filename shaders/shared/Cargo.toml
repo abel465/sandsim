@@ -11,7 +11,9 @@ spirv-std = { workspace = true }
 bytemuck = { workspace = true, features = ["derive"] }
 
 [target.'cfg(not(any(target_arch = "spirv")))'.dependencies]
-strum = { version = "0.26.2", features = ["derive"] }
 winit = { version = "0.30.5", default-features = false }
 rayon = "1.10.0"
 rand = "0.8.5"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_arch, values("spirv"))'] }
