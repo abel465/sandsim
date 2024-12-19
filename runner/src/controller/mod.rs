@@ -72,12 +72,11 @@ impl Controller {
     }
 
     pub fn mouse_scroll(&mut self, delta: MouseScrollDelta) {
-        match delta {
-            MouseScrollDelta::LineDelta(_, val) => {
-                self.zoom = (self.zoom + self.zoom * val * 0.1).clamp(1.0, 100.0);
-            }
-            _ => unimplemented!(),
-        }
+        let val = match delta {
+            MouseScrollDelta::LineDelta(_, val) => val * 0.1,
+            MouseScrollDelta::PixelDelta(p) => (p.y * 0.005) as f32,
+        };
+        self.zoom = (self.zoom + self.zoom * val).clamp(1.0, 100.0);
     }
 
     pub fn mouse_input(&mut self, state: ElementState, button: MouseButton) {
