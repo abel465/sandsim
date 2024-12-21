@@ -32,7 +32,7 @@ fn handle_cursor_down(constants: &FragmentConstants, pos: Vec2, grid: &mut GridR
         let prev_cursor = zoom(constants.prev_cursor.into(), height, constants.zoom);
         let cursor = zoom(constants.cursor.into(), height, constants.zoom);
         if distance_sq_to_line_segment(pos, prev_cursor, cursor) < constants.brush_size_sq {
-            let tone = rand(pos / constants.size.as_vec2() * (constants.time % 1.0));
+            let tone = rand(pos * (constants.time + 1.0));
             let particle_type = ParticleType::from_value(constants.current_particle_type);
             let particle = Particle::new_from_tone(particle_type, tone);
             grid.set(pos.x as usize, pos.y as usize, particle);
@@ -89,7 +89,9 @@ pub fn main_vs(
     #[spirv(vertex_index)] vert_id: i32,
     #[spirv(position, invariant)] out_pos: &mut Vec4,
 ) {
-    fullscreen_vs(vert_id, out_pos)
+    let uv = vec2(((vert_id << 1) & 2) as f32, (vert_id & 2) as f32);
+    let pos = 2.0 * uv - Vec2::ONE;
+    *out_pos = pos.extend(0.0).extend(1.0);
 }
 
 #[spirv(compute(threads(16, 16)))]
