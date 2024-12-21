@@ -54,12 +54,12 @@
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
           cargoLock.outputHashes = {
-            "rustc_codegen_spirv-0.9.0" = "sha256-BaWGJQjbAH5WdXul2M2C1hsfsH659qpQEeM/c5bkYds=";
+            "rustc_codegen_spirv-0.9.0" = "sha256-Yu/126ByKt+S0cmyeqeKyIfx4Xb616LnrL/6loYjJzs=";
           };
           dontCargoSetupPostUnpack = true;
           postUnpack = ''
             mkdir -p .cargo
-            cat "$cargoDeps"/.cargo/config | sed "s|cargo-vendor-dir|$cargoDeps|" >> .cargo/config
+            cat "$cargoDeps"/.cargo/config.toml | sed "s|cargo-vendor-dir|$cargoDeps|" >> .cargo/config.toml
             # HACK(eddyb) bypass cargoSetupPostPatchHook.
             export cargoDepsCopy="$cargoDeps"
           '';
