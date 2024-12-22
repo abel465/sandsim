@@ -114,7 +114,7 @@ fn sand_water_air<F: FnMut([usize; 2], [usize; 2])>(
             swap(top_left, bot_left);
         }
         [[WATER, EMPTY], [WATER, SAND]] => swap(top_left, top_right),
-        [[SAND, WATER], [SAND, WATER]] => swap(top_right, bot_right),
+        [[SAND, WATER], [SAND, EMPTY]] => swap(top_right, bot_right),
         _ => {}
     }
 }
