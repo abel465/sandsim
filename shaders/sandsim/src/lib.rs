@@ -5,7 +5,6 @@ use shared::gridref::*;
 use shared::particle::*;
 use shared::*;
 use spirv_std::glam::*;
-#[cfg_attr(not(target_arch = "spirv"), allow(unused_imports))]
 use spirv_std::num_traits::Float;
 use spirv_std::spirv;
 

@@ -2,14 +2,22 @@ pub mod simplex;
 
 use spirv_std::glam::*;
 
-fn mod289_vec3(x: Vec3) -> Vec3 {
-    x - (x * (1.0 / 289.0)).floor() * 289.0
+trait Mod289 {
+    fn mod289(self) -> Self;
 }
 
-fn mod289_vec2(x: Vec2) -> Vec2 {
-    x - (x * (1.0 / 289.0)).floor() * 289.0
+impl Mod289 for Vec2 {
+    fn mod289(self) -> Self {
+        self - (self * (1.0 / 289.0)).floor() * 289.0
+    }
+}
+
+impl Mod289 for Vec3 {
+    fn mod289(self) -> Self {
+        self - (self * (1.0 / 289.0)).floor() * 289.0
+    }
 }
 
 fn permute(x: Vec3) -> Vec3 {
-    mod289_vec3(((x * 34.0) + 10.0) * x)
+    (((x * 34.0) + 10.0) * x).mod289()
 }

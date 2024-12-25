@@ -5,9 +5,9 @@
 //                   Distributed under the MIT License. See LICENSE file.
 //                   https://github.com/ashima/webgl-noise
 //                   https://github.com/stegu/webgl-noise
-// 
+//
 
-use super::{mod289_vec2, mod289_vec3, permute};
+use super::*;
 use spirv_std::glam::*;
 
 pub fn noise(v: Vec2) -> f32 {
@@ -29,7 +29,7 @@ pub fn noise(v: Vec2) -> f32 {
     x12.y -= i1.y;
 
     // Permutations
-    let i = mod289_vec2(i); // Avoid truncation effects in permutation
+    let i = i.mod289(); // Avoid truncation effects in permutation
     let p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
 
     let m =
