@@ -22,6 +22,10 @@ pub struct Options {
     // https://github.com/gfx-rs/wgpu/issues/5128
     #[structopt(long)]
     validate_spirv: bool,
+
+    /// Starts in debug mode and with speed set to 0
+    #[structopt(short, long)]
+    debug: bool,
 }
 
 pub fn main() {

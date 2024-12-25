@@ -1,6 +1,7 @@
 use crate::{
     bind_group_buffer::{BindGroupBufferType, BufferData, SSBO},
     user_event::UserEvent,
+    Options,
 };
 use bytemuck::Zeroable;
 use egui::Context;
@@ -36,11 +37,14 @@ pub struct Controller {
 }
 
 impl Controller {
-    pub fn new(size: PhysicalSize<u32>) -> Self {
+    pub fn new(size: PhysicalSize<u32>, options: &Options) -> Self {
         let now = Instant::now();
         let grid = Grid::<Particle>::from_fn(size.width as usize, size.height as usize, |_, _| {
             Particle::default()
         });
+
+        let debug = options.debug;
+        let speed = normalize_speed_down(!debug as u32 as f32);
 
         Self {
             size,
@@ -55,11 +59,11 @@ impl Controller {
             current_particle_type: ParticleType::Sand,
             brush_size: 20.0,
             offset: 0,
-            speed: normalize_speed_down(1.0),
+            speed,
             distance: 0.0,
             last_frame: now,
             zoom: 1.0,
-            debug: false,
+            debug,
         }
     }
 
@@ -173,6 +177,9 @@ impl Controller {
                 .max_decimals(2),
         );
         ui.checkbox(&mut self.debug, "Debug");
+        if self.debug {
+            ui.label(format!("Elapsed: {:.1}s", self.start.elapsed().as_secs_f64()));
+        }
     }
 
     pub fn buffers(&self) -> BufferData {

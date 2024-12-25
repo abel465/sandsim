@@ -218,7 +218,7 @@ async fn create_graphics(builder: Builder, event_loop: &ActiveEventLoop) {
 
     let ui_state = UiState::new();
 
-    let controller = Controller::new(window.inner_size());
+    let controller = Controller::new(window.inner_size(), &builder.options);
 
     let rpass = RenderPass::new(
         &ctx,
