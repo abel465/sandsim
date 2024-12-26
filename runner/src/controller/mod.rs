@@ -14,6 +14,7 @@ use egui_winit::winit::{
 use glam::*;
 use shared::grid::*;
 use shared::{particle::*, push_constants::sandsim::*};
+use shared::{UI_MENU_HEIGHT, UI_SIDEBAR_WIDTH};
 use std::time::Instant;
 
 pub struct Controller {
@@ -39,6 +40,10 @@ pub struct Controller {
 impl Controller {
     pub fn new(size: PhysicalSize<u32>, options: &Options) -> Self {
         let now = Instant::now();
+        let size = PhysicalSize {
+            width: size.width - UI_SIDEBAR_WIDTH,
+            height: size.height - UI_MENU_HEIGHT,
+        };
         let grid = Grid::<Particle>::from_fn(size.width as usize, size.height as usize, |_, _| {
             Particle::default()
         });
@@ -68,11 +73,14 @@ impl Controller {
     }
 
     pub fn resize(&mut self, size: PhysicalSize<u32>) {
-        self.size = size;
+        self.size = PhysicalSize {
+            width: size.width - UI_SIDEBAR_WIDTH,
+            height: size.height - UI_MENU_HEIGHT,
+        };
     }
 
     pub fn mouse_move(&mut self, position: PhysicalPosition<f64>) {
-        self.cursor = vec2(position.x as f32, position.y as f32);
+        self.cursor = vec2(position.x as f32, position.y as f32 - UI_MENU_HEIGHT as f32);
     }
 
     pub fn mouse_scroll(&mut self, delta: MouseScrollDelta) {

@@ -8,3 +8,6 @@ pub mod gridref;
 pub mod noise;
 pub mod particle;
 pub mod push_constants;
+
+pub const UI_MENU_HEIGHT: u32 = 22;
+pub const UI_SIDEBAR_WIDTH: u32 = 164;

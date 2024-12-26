@@ -134,7 +134,7 @@ impl RenderPass {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        self.render_shader(ctx, &output_view, controller);
+        self.render_shader(ctx, &output_view, controller, window.inner_size());
         self.render_ui(ctx, &output_view, window, ui, ui_state, controller);
 
         output.present();
@@ -147,6 +147,7 @@ impl RenderPass {
         ctx: &GraphicsContext,
         output_view: &TextureView,
         controller: &Controller,
+        size: PhysicalSize<u32>,
     ) {
         let mut encoder = ctx
             .device
@@ -168,6 +169,14 @@ impl RenderPass {
                 })],
                 depth_stencil_attachment: None,
             });
+            rpass.set_viewport(
+                0.0,
+                shared::UI_MENU_HEIGHT as f32,
+                (size.width - shared::UI_SIDEBAR_WIDTH) as f32,
+                (size.height - shared::UI_MENU_HEIGHT) as f32,
+                0.0,
+                1.0,
+            );
 
             rpass.set_pipeline(&self.pipelines.render);
             rpass.set_push_constants(
@@ -444,14 +453,9 @@ fn create_pipeline_layouts(
                 }],
             })
     };
+    use shared::push_constants::sandsim::*;
     PipelineLayouts {
-        render: create(
-            wgpu::ShaderStages::FRAGMENT,
-            shared::push_constants::sandsim::FragmentConstants::mem_size(),
-        ),
-        compute: create(
-            wgpu::ShaderStages::COMPUTE,
-            shared::push_constants::sandsim::ComputeConstants::mem_size(),
-        ),
+        render: create(wgpu::ShaderStages::FRAGMENT, FragmentConstants::mem_size()),
+        compute: create(wgpu::ShaderStages::COMPUTE, ComputeConstants::mem_size()),
     }
 }

@@ -82,7 +82,7 @@ impl Ui {
     }
 
     fn ui(&self, ctx: &Context, ui_state: &mut UiState, controller: &mut Controller) {
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+        let resp = egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("Settings", |ui| {
                     ui.checkbox(&mut ui_state.show_fps, "fps counter");
@@ -98,10 +98,12 @@ impl Ui {
                 }
             });
         });
-        egui::SidePanel::right("right_panel")
+        debug_assert_eq!(resp.response.rect.height(), shared::UI_MENU_HEIGHT as f32);
+        let resp = egui::SidePanel::right("right_panel")
             .resizable(false)
             .show(ctx, |ui| {
                 controller.ui(ctx, ui, &self.event_proxy);
             });
+        debug_assert_eq!(resp.response.rect.width(), shared::UI_SIDEBAR_WIDTH as f32);
     }
 }
